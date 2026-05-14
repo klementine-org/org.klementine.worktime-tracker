@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Worktime Tracker",
+  "productName": "Worktime-Tracker",
   "version": "0.1.0",
   "identifier": "org.klementine.worktime-tracker",
   "build": {
