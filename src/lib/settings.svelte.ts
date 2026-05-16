@@ -16,7 +16,7 @@ export type PomodoroSettings = {
 	sessionsBeforeLong: number;
 };
 
-const DEFAULT_POMODORO: PomodoroSettings = {
+export const DEFAULT_POMODORO: PomodoroSettings = {
 	enabled: false,
 	workMins: 25,
 	shortBreakMins: 5,

@@ -3,7 +3,7 @@
 	import { open as openDialog } from '@tauri-apps/plugin-dialog';
 	import { copyFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 	import { join, basename } from '@tauri-apps/api/path';
-	import { settings, type WeekDay } from '$lib/settings.svelte';
+	import { settings, DEFAULT_POMODORO, type WeekDay } from '$lib/settings.svelte';
 	import * as db from '$lib/db.svelte';
 
 	let pomoEnabled = $state(settings.pomodoro.enabled);
@@ -30,6 +30,7 @@
 		});
 	}
 
+	let pomoResetMsg = $state('');
 	let busy = $state(false);
 	let error = $state<string | null>(null);
 	let info = $state<string | null>(null);
@@ -130,7 +131,7 @@
 		</label>
 
 		{#if pomoEnabled}
-			<div class="grid grid-cols-2 gap-4">
+			<div class="mb-4 grid grid-cols-2 gap-4">
 				<div>
 					<label class="mb-1 block text-xs font-medium text-[color:var(--color-fg-muted)]" for="pomo-work">Work duration (min)</label>
 					<input
@@ -180,6 +181,21 @@
 					/>
 				</div>
 			</div>
+			<button
+				type="button"
+				class="text-sm text-[color:var(--color-fg-muted)] underline decoration-[color:var(--color-border)] underline-offset-2 transition hover:text-[color:var(--color-fg)]"
+				onclick={async () => {
+					pomoWork = DEFAULT_POMODORO.workMins;
+					pomoShort = DEFAULT_POMODORO.shortBreakMins;
+					pomoLong = DEFAULT_POMODORO.longBreakMins;
+					pomoSessions = DEFAULT_POMODORO.sessionsBeforeLong;
+					await savePomo();
+					pomoResetMsg = 'Restored defaults';
+					setTimeout(() => pomoResetMsg = '', 2000);
+				}}
+			>
+				{pomoResetMsg || 'Reset to defaults'}
+			</button>
 		{/if}
 	</section>
 
