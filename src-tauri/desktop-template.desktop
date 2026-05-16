@@ -1,0 +1,9 @@
+[Desktop Entry]
+Categories=Utility;
+Comment=Local-first work time tracker
+Exec=worktime-tracker
+Icon=worktime-tracker
+Name=Worktime Tracker
+StartupWMClass=worktime-tracker
+Terminal=false
+Type=Application

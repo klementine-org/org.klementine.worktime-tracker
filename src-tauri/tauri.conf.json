@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Worktime-Tracker",
+  "productName": "worktime-tracker",
   "version": "0.1.0",
   "identifier": "org.klementine.worktime-tracker",
   "build": {
@@ -34,6 +34,17 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "desktop-template.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "desktop-template.desktop"
+      }
+    },
+    "macOS": {
+      "infoPlist": "Info.plist"
+    }
   }
 }

@@ -2,18 +2,48 @@ use tauri::{
     image::Image,
     menu::{Menu, MenuItem},
     tray::TrayIconEvent,
+    WebviewUrl,
     Emitter, Manager,
 };
 
-use tauri_plugin_notification::NotificationExt;
+fn ensure_window(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.show();
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+        return;
+    }
+    // Window was closed — create a new one
+    if let Ok(w) = tauri::WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+        .title("Worktime Tracker")
+        .inner_size(1024.0, 720.0)
+        .build()
+    {
+        if let Ok(icon) = Image::from_bytes(include_bytes!("../icons/128x128.png")) {
+            let _ = w.set_icon(icon);
+        }
+    }
+}
 
 #[tauri::command]
-fn send_notification(app: tauri::AppHandle, title: String, body: String) {
-    let _ = app.notification()
-        .builder()
-        .title(&title)
-        .body(&body)
-        .show();
+fn send_notification(_app: tauri::AppHandle, title: String, body: String) {
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("notify-send")
+            .arg("--app-name=Worktime Tracker")
+            .arg(&title)
+            .arg(&body)
+            .spawn();
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        use tauri_plugin_notification::NotificationExt;
+        let _ = _app.notification()
+            .builder()
+            .title(&title)
+            .body(&body)
+            .show();
+    }
 }
 
 #[tauri::command]
@@ -40,11 +70,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-                let _ = w.unminimize();
-                let _ = w.set_focus();
-            }
+            ensure_window(app);
         }))
         .invoke_handler(tauri::generate_handler![update_tray, send_notification])
         .setup(|app| {
@@ -57,13 +83,7 @@ pub fn run() {
             tray.set_tooltip(Some("Worktime"))?;
 
             tray.on_menu_event(|app, event| match event.id().as_ref() {
-                "show" => {
-                    if let Some(w) = app.get_webview_window("main") {
-                        let _ = w.show();
-                        let _ = w.unminimize();
-                        let _ = w.set_focus();
-                    }
-                }
+                "show" => ensure_window(app),
                 "quit" => {
                     let _ = app.emit("app://before-quit", ());
                     let handle = app.clone();
@@ -77,31 +97,14 @@ pub fn run() {
 
             tray.on_tray_icon_event(|tray, event| {
                 if matches!(event, TrayIconEvent::Click { .. }) {
-                    let app = tray.app_handle();
-                    if let Some(w) = app.get_webview_window("main") {
-                        let _ = w.show();
-                        let _ = w.unminimize();
-                        let _ = w.set_focus();
-                    }
+                    ensure_window(tray.app_handle());
                 }
             });
 
-            // Set window icon for the taskbar/dock on Linux
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(icon) = Image::from_bytes(include_bytes!("../icons/128x128.png")) {
                     let _ = window.set_icon(icon);
                 }
-            }
-
-            // Intercept window close → just hide to tray (tracking continues)
-            if let Some(window) = app.get_webview_window("main") {
-                let w = window.clone();
-                window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                        api.prevent_close();
-                        let _ = w.hide();
-                    }
-                });
             }
 
             Ok(())

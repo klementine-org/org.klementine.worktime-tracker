@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { open as openDialog } from '@tauri-apps/plugin-dialog';
 	import { copyFile, exists, mkdir } from '@tauri-apps/plugin-fs';
-	import { dirname, join, basename } from '@tauri-apps/api/path';
-	import { settings, type WeekDay, type PomodoroSettings } from '$lib/settings.svelte';
+	import { join, basename } from '@tauri-apps/api/path';
+	import { settings, type WeekDay } from '$lib/settings.svelte';
 	import * as db from '$lib/db.svelte';
 
 	let pomoEnabled = $state(settings.pomodoro.enabled);
@@ -44,7 +44,7 @@
 		await settings.setWeekStart(day);
 	}
 
-	async function moveToFolder() {
+	async function moveDatabase() {
 		if (busy || !settings.dbPath) return;
 		busy = true;
 		error = null;
@@ -75,33 +75,9 @@
 		}
 	}
 
-	async function pointAtExisting() {
+	async function switchDatabase() {
 		if (busy) return;
-		busy = true;
-		error = null;
-		info = null;
-		try {
-			const picked = await openDialog({
-				directory: false,
-				multiple: false,
-				title: 'Pick an existing worktime database',
-				filters: [{ name: 'SQLite', extensions: ['db', 'sqlite', 'sqlite3'] }]
-			});
-			if (typeof picked !== 'string') return;
-			await db.close();
-			await db.open(picked);
-			await settings.setDbPath(picked);
-			info = `Now using ${picked}.`;
-		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
-		} finally {
-			busy = false;
-		}
-	}
-
-	async function reset() {
-		if (busy) return;
-		const ok = confirm('Forget the current database location? The file itself stays where it is.');
+		const ok = confirm('Switch to a different database? Your current file stays where it is.');
 		if (!ok) return;
 		busy = true;
 		try {
@@ -120,7 +96,6 @@
 	<header class="mb-8 flex items-center justify-between">
 		<div>
 			<h1 class="mb-1 text-3xl">Settings</h1>
-			<p class="text-sm text-[color:var(--color-fg-muted)]">Manage your local database.</p>
 		</div>
 		<a href="/" class="btn-outline">Back</a>
 	</header>
@@ -209,10 +184,10 @@
 	</section>
 
 	<section class="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-sm">
-		<h2 class="mb-3 text-lg">Database file</h2>
-		<div class="selectable mb-4 rounded-lg bg-[color:var(--color-surface-2)] px-3 py-2 font-mono text-xs text-[color:var(--color-fg-muted)] break-all">
+		<h2 class="mb-3 text-lg">Database</h2>
+		<p class="selectable mb-4 rounded-lg bg-[color:var(--color-surface-2)] px-3 py-2 font-mono text-xs text-[color:var(--color-fg-muted)] break-all">
 			{settings.dbPath ?? '(none)'}
-		</div>
+		</p>
 
 		{#if info}
 			<p class="mb-3 rounded-lg bg-[color:var(--color-accent-soft)] px-3 py-2 text-sm">{info}</p>
@@ -227,26 +202,18 @@
 			<button
 				type="button"
 				class="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-bg)] px-4 py-2 text-sm transition hover:bg-[color:var(--color-surface-2)] disabled:opacity-60"
-				onclick={moveToFolder}
+				onclick={moveDatabase}
 				disabled={busy || !settings.dbPath}
 			>
 				Move to folder…
 			</button>
 			<button
 				type="button"
-				class="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-bg)] px-4 py-2 text-sm transition hover:bg-[color:var(--color-surface-2)] disabled:opacity-60"
-				onclick={pointAtExisting}
-				disabled={busy}
-			>
-				Point at existing file…
-			</button>
-			<button
-				type="button"
 				class="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-bg)] px-4 py-2 text-sm text-[color:var(--color-danger)] transition hover:bg-[color:var(--color-surface-2)] disabled:opacity-60"
-				onclick={reset}
+				onclick={switchDatabase}
 				disabled={busy}
 			>
-				Reset (forget path)
+				Switch database…
 			</button>
 		</div>
 	</section>

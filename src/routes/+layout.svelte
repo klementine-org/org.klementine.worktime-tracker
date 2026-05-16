@@ -36,7 +36,7 @@
 {:else if bootError}
 	<div class="grid h-screen place-items-center px-6 text-center">
 		<div>
-			<h1 class="mb-2 text-2xl">Couldn't start Worktime</h1>
+			<h1 class="mb-2 text-2xl">Couldn't start Worktime Tracker</h1>
 			<p class="text-[color:var(--color-fg-muted)]">{bootError}</p>
 		</div>
 	</div>
